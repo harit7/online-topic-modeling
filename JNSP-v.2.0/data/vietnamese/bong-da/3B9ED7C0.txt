@@ -1,0 +1,21 @@
+url=http://www.vnexpress.net/Vietnam/The-thao/Bong-da/2006/08/3B9ED7C0/
+title=Khởi tranh vòng đấu loại giải bóng đá U21 toàn quốc 
+cat=THE-THAO|BONG-DA
+
+Khởi_tranh vòng đấu_loại giải bóng_đá U21 toàn_quốc
+Hôm_nay , bảng C giải U21 báo Thanh_Niên sẽ bắt_đầu tại_Gia_Lai .
+Giải năm_nay có 36 đội tham_dự chia_làm 6 bảng , các đội đứng_đầu mỗi bảng cùng với hai đội được đặt cách vào thẳng là ĐKVĐ Bình_Định và đội chủ_nhà Đà_Nẵng sẽ tham_dự vòng chung_kết vào tháng 9 tới .
+
+Bảng A_gồm : Nam_Định , Thanh_Hóa , HN.ACB , Hải_Phòng , Quảng_Ninh và Thể_Công ( thi_đấu tại Nam_Định_từ ngày 25/8 đến 2/9 ) .
+
+Bảng B có : Huế , HP.HN , SLNA , QK4 , QK5 và Trung_tâm VST ( thi_đấu tại Huế từ ngày 31/8 ) .
+
+Bảng C : Gia_Lai , Khánh_Hòa , Đồng_Nai , Phú_Yên , Quảng_Nam và Bình_Thuận ( khởi_tranh từ 24/8 đến 1/9 tại_Gia_Lai ) .
+
+Bảng D : CLB TPHCM , Đá Mỹ_Nghệ , ĐH Hồng_Bàng , QK7 , TMN.CSG và Trường Nghgiệp Vụ TPHCM ( thi_đấu tại Thành_Long từ 26/8 đến 3/9 ) .
+
+Bảng_E : Đồng_Tháp , Cần_Thơ , Bình_Dương , Tây_Ninh , Thanh_Thái và Tiền_Giang ( thi_đấu ở Đồng_Tháp từ 27/8 đến 2/9 ) .
+
+Bảng F : Cà_Mau , An_Giang , QK9 , Gạch_Đồng_Tâm , Trà_Vinh và Vĩnh_Long ( diễn_ra từ 27/8 đến 5/9 tại Cà_Mau ) .
+
+An_Nhơn

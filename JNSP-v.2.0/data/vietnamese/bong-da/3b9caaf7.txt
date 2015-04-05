@@ -1,0 +1,6 @@
+url=http://www.vnexpress.net/vietnam/the%2Dthao/bong%2Dda/2003/08/3b9caaf7/
+title=Lịch đấu giải Ngoại hạng Anh 2003-2004 
+cat=THE%2DTHAO|BONG%2DDA
+
+Lịch_đấu giải Ngoại_hạng Anh 2003-2004
+( Cập_nhật giờ đấu cụ_thể trước mỗi_vòng ; đội đứng trước là chủ_nhà )
