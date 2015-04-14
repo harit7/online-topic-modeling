@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import jnsp.Counter;
 import ttm.app.Config;
@@ -25,7 +27,7 @@ public class TopicLabeler
 	public List<TopicLabel> getTopicLabelsZeroOrder(Result result, List<String> documents,Vocabulary vocab) throws IOException
 	{
 		List<TopicLabel> listLabels = new ArrayList<TopicLabel>(); 
-		List<TopicLabel> candLabels = getCandidateLabels(documents);
+		//List<TopicLabel> candLabels = getCandidateLabels(documents);
 
 		List<HashMap<String,Double>> topicModels = result.getTopicModels();
 		int totalWC = 0;
@@ -37,29 +39,27 @@ public class TopicLabeler
 		int i = 0;
 		for(HashMap<String,Double> topicModel: topicModels)
 		{
-			
-			listLabels.add(null);
-			
+			Set<Entry<String,Double>> set = topicModel.entrySet();
 			double max = -1;
+			String label = null;
 			
-			for(TopicLabel label: candLabels)
+			List<String> listWords = new ArrayList<String>();
+			List<Integer> counts   = new ArrayList<Integer>();
+			for(Entry<String,Double> entry: set)
 			{
-				if(listLabels.contains(label)) continue;
-				//double s = zeroOrderScore(label, topicModel, vocab);
-				//double  s = score(label, topicModel, totalWC);
-				double s  = discScore(topicModels, label, topicModel, Config.mu, totalWC);
-				label.setScore(s); 
-				s = s*Math.pow(label.labelCount, 1);
-				
-				if(s > max)
+				if(entry.getValue() > max)
 				{
-					max = s;
-					
-					listLabels.set(i, label);
+					max = entry.getValue();
+					label= entry.getKey();
 				}
 				
 			}
-			i++;
+			listWords.add(label);
+			counts.add(1);
+			TopicLabel topicLabel = new TopicLabel(listWords, counts, 1);
+			
+			listLabels.add(topicLabel);
+			
 		}
 		
 		return listLabels;
@@ -89,8 +89,8 @@ public class TopicLabeler
 			{
 				if(listLabels.contains(label)) continue;
 				//double s = zeroOrderScore(label, topicModel, vocab);
-				//double  s = score(label, topicModel, totalWC);
-				double s  = discScore(topicModels, label, topicModel, Config.mu, totalWC);
+				double  s = score(label, topicModel, totalWC);
+				//double s  = discScore(topicModels, label, topicModel, Config.mu, totalWC);
 				label.setScore(s); 
 				s = s*Math.pow(label.labelCount, 1);
 				
@@ -108,7 +108,7 @@ public class TopicLabeler
 		return listLabels;
 	}
 
-	public List<TopicLabel> getTopicLabels(Result result, List<String> documents,Vocabulary vocab) throws IOException
+	public List<TopicLabel> getTopicLabels(Result result, List<String> documents,Vocabulary vocab,double pow) throws IOException
 	{
 		List<TopicLabel> listLabels = new ArrayList<TopicLabel>(); 
 		List<TopicLabel> candLabels = getCandidateLabels(documents);
@@ -135,7 +135,7 @@ public class TopicLabeler
 				//double  s = score(label, topicModel, totalWC);
 				double s  = discScore(topicModels, label, topicModel, Config.mu, totalWC);
 				label.setScore(s); 
-				s = s*Math.pow(label.labelCount, 1);
+				s = s*Math.pow(label.labelCount, pow);
 				
 				if(s > max)
 				{
@@ -212,8 +212,8 @@ public class TopicLabeler
 		{
 			if(theta.containsKey(w)) 
 			{
-				score = score + theta.get(w)* pmi(i, label, (double)label.counts.get(i)/totalWordsInDoc);
-				//score = score +	0 - (theta.get(w) * ( Math.log(theta.get(w) )));
+				//score = score + theta.get(w)* pmi(i, label, (double)label.counts.get(i)/totalWordsInDoc);
+				score = score +	 (theta.get(w) * ( Math.log(theta.get(w) )));
 				
 			}
 			i++;

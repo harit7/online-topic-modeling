@@ -20,7 +20,6 @@ import vagueobjects.ir.lda.tokens.PlainVocabulary;
 public class App 
 {
 	
-	
     public static void main(String[] args) throws Exception
     { 
         int D  =  Config.BATCH_SIZE;
@@ -61,7 +60,8 @@ public class App
         
         long lastDocId    = 0;
         long batchId      = 0;
-       
+        Scanner sc = new Scanner(System.in);
+        
         try{
         	
         	appState      = AppUtils.readAppState(appStateFilePath);
@@ -82,10 +82,14 @@ public class App
 	
 			System.out.println("loaded previous state.." );
 			
-			List<TopicLabel> listLabels = labeler.getTopicLabels(prevResult, documents, vocab);
-			for(TopicLabel label: listLabels){
-				System.out.println(label); 
+			List<TopicLabel> listLabels = labeler.getTopicLabels(prevResult, documents, vocab,1);
+			List<TopicLabel> listLabels1 = labeler.getTopicLabels(prevResult, documents, vocab,0);
+			
+			for(int i = 0; i< listLabels.size();i++){
+				
+				System.out.println(listLabels.get(i) + "\t" + listLabels1.get(i));  
 			}
+			
 			
 			curLda = appState.getCurOlda();
   
@@ -114,9 +118,7 @@ public class App
         	}
         }
         
-    	Scanner sc = new Scanner(System.in);
-        System.out.println("Continue for Live Tweets?");
-        sc.next();
+    	
       
         // data/docs/tweets_0.txt
         
@@ -124,12 +126,16 @@ public class App
         batchId = 0;
        
        
-        String tweetsFilePath  =   absDocsDir+ slash + "clubbeddata.txt";
+        //String tweetsFilePath  =   absDocsDir+ slash + "clubbed2.txt";
+        String tweetsFilePath  =   absDocsDir+ slash + "#cricket.txt";
         
         TextCleaner cleaner = new TextCleaner(stopWordsFilePath);
         
         if(live)
         {
+
+            System.out.println("Continue for Live Tweets?");
+            sc.next();
         	tweetsFilePath   = absDocsDir + slash + "tweets_"+(lastDocId)+".txt";
 	        String batchFileName    = AppUtils.getBatchFileName(lastDocId, batchId);
 	        			
@@ -153,9 +159,9 @@ public class App
         	prevResult = curResult;
         	
         	for( int i = 0; i< Config.BATCH_SIZE;i++){
-        		
+        		System.out.println("reading doc #"+(i+1)); 
         		documents.set(i,AppUtils.readTweets(tweetReader,cleaner)); 
-        		System.out.println("read doc #"+(i+1)); 
+        		
         		  
         	}
         	System.out.println("Done Reading..");
@@ -175,23 +181,18 @@ public class App
         	
         	// detect emerging topics
         	// label the topics
-        	
-        	List<TopicLabel> listLabels = labeler.getTopicLabels(curResult, documents, vocab);
-        	for(TopicLabel label: listLabels)
-        	{
-        		System.out.println(label); 
-        	}
-        	
-        	listLabels = labeler.getTopicLabelsZeroOrder(curResult, documents, vocab);
-        	for(TopicLabel label: listLabels)
-        	{
-        		System.out.println(label); 
-        	}
-        	
-        	listLabels = labeler.getTopicLabelsBaseline(curResult, documents, vocab);
-        	for(TopicLabel label: listLabels){
-        		System.out.println(label); 
-        	}
+        	List<TopicLabel> listLabels = labeler.getTopicLabels(curResult, documents, vocab,1);
+        	List<TopicLabel> listLabels1 = labeler.getTopicLabels(curResult, documents, vocab,0);
+			double sum1 = 0,sum2=0;
+			for(int i = 0; i< listLabels.size();i++){
+				
+				System.out.println(listLabels.get(i) + "\t" + listLabels1.get(i));
+				sum1+=sc.nextInt();
+				sum2+=sc.nextInt();
+				
+			}
+        	int n = listLabels.size();
+			System.out.println(sum1/n + "\t" + sum2/n);
         	
         	
         	try {

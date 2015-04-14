@@ -24,29 +24,44 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Scanner;
 
-public class PlainVocabulary implements Vocabulary{
+public class PlainVocabulary implements Vocabulary, Serializable{
     
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1370817236854922021L;
 	final List<String> strings =new ArrayList<String>();
     
     public PlainVocabulary(Collection<String> strings) 
-    {
+    {	
         	addWords(strings);   
     }
-    public void addWords(Collection<String> words)
+    public void addWords(String words[])
     {
-    	for(String s: strings)
+    	for(String s: words)
     	{
     		if(!strings.contains(s))
     		{
     			this.strings.add(s);
     		}
-    	}
-    	
+    	}	
+    }
+    
+    public void addWords(Collection<String> words)
+    {
+    	for(String s: words)
+    	{
+    		if(!strings.contains(s))
+    		{
+    			this.strings.add(s);
+    		}
+    	}	
     }
     public PlainVocabulary(String path ) throws IOException 
     {

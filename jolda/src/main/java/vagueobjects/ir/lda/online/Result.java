@@ -27,20 +27,26 @@ import vagueobjects.ir.lda.online.matrix.Vector;
 import vagueobjects.ir.lda.tokens.Documents;
 import vagueobjects.ir.lda.tokens.Tuple;
 
+import java.io.Serializable;
 import java.util.*;
 
 /**
  * Displays topics discovered by Online LDA. Topics are sorted by
  * their statistical importance.
  */
-public class Result {
-    /**Number of terms per each tokens to show*/
+public class Result implements Serializable {
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 3041050661143991949L;
+	/**Number of terms per each tokens to show*/
     static int NUMBER_OF_TOKENS = 15;
-    private final Matrix lambda;
+    private final Matrix  lambda;
     private final double perplexity;
     private final Documents documents; 
     private final int totalTokenCount;
-
+    
+    private  List<HashMap<String,Double>> topicModels;
     /**
      *
      * @param docs  - documents in the batch
@@ -64,7 +70,7 @@ public class Result {
         int numTerms = Math.min(NUMBER_OF_TOKENS, lambda.getNumberOfColumns());
         for (int k = 0; k < numTopics; ++k) {
             Vector termScores = lambda.getRow(k);
-
+            
             for(Tuple tuple:  sortTopicTerms(termScores,  numTerms )){
                 tuple.addToString(sb, documents);
             }
@@ -75,7 +81,7 @@ public class Result {
         return sb.toString();
     }
 
-    private Collection<Tuple> sortTopicTerms(Vector termScores, int numTerms ) {
+    public  static Collection<Tuple> sortTopicTerms(Vector termScores, int numTerms ) {
         Set<Tuple> tuples = new TreeSet<Tuple>();
         double sum=0d;
         for(int i=0; i< termScores.getLength();++i){
@@ -94,5 +100,41 @@ public class Result {
         }
         return new ArrayList<Tuple>(tuples).subList(0, numTerms);
     }
+
+	public Matrix getLambda() {
+		return lambda;
+	}
+
+	public double getPerplexity() {
+		return perplexity;
+	}
+    
+	public List<HashMap<String,Double>> getTopicModels()
+	{
+		if(topicModels != null) return topicModels;
+		
+		topicModels  = new ArrayList<HashMap<String,Double>>();
+		
+        int numTopics = lambda.getNumberOfRows();
+        int numTerms =  lambda.getNumberOfColumns();
+        for (int k = 0; k < numTopics; ++k) 
+        {
+        	HashMap<String,Double> topicModel = new HashMap<String,Double>();
+        	
+            Vector termScores = lambda.getRow(k);
+            
+            for(Tuple tuple:  sortTopicTerms(termScores,  numTerms )){
+            	
+            	
+            	topicModel.put(documents.getToken(tuple.getPosition()), tuple.getValue());
+                
+            }
+
+            topicModels.add(topicModel);
+        }
+        
+        return topicModels;
+	}
+    
 
 }

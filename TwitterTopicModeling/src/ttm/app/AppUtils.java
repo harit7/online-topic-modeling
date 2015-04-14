@@ -18,7 +18,16 @@ import jnsp.NSPOption;
 
 public class AppUtils
 {
-	 
+	private static 	int a [] = new int[10];
+	 static{ 
+	
+		for(int i = 1; i< 11;i++)
+		{
+			int p = (Config.MAX_TWEETS_PER_DOC*i)/10;
+			a[i-1] = p;
+			
+		}
+	 }
 	  static String readDoc(File doc, TextCleaner cleaner) throws IOException
 	    {
 	    	String content = "";
@@ -108,8 +117,12 @@ public class AppUtils
 	    			
 	    			//if(lr%100 == 0) System.out.print(lr+" ");
 	    			//if(lr%1000 ==0) System.out.println();
-	    			double p = (double)(lr*100)/Config.MAX_TWEETS_PER_DOC;
-	    			if((p*100)%1000 == 0 & p!=0) System.out.print(p+"% ");
+	    			
+	    			for(int i = 0;i< a.length;i++)
+	    			{
+	    				if(a[i] == lr) System.out.print((i+1)*10+"% "); 
+	    			}
+	    			
 	    			//System.out.print(lr*100/MAX_TWEETS_PER_DOC +"% \r");
 	    			 
 	    			

@@ -7,14 +7,12 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.StringTokenizer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 
 public class TextCleaner  
 {
     private static HashSet<String> swlist;
-    private static String stopWordsFilePath = "";
+    private static String stopWordsFilePath = "data/stopwords.txt";
 
     public TextCleaner( String stopWordsFilePath) throws IOException  
     {	
@@ -52,10 +50,10 @@ public class TextCleaner
 		br.close();
 		
     }
-    public String clean(String text) throws IOException 
+    public String clean(String text) 
     {
 		String cleantext = removeUrl(text);
-		cleantext = cleantext.replaceAll("[^\\w\\s\\-_]", " ").replaceAll(" +", " ");		
+		cleantext = cleantext.replaceAll("[^\\w\\s]", "").replaceAll(" +", " ");		
 		cleantext  = removeStopWords( cleantext + "\n");
 		
 		return cleantext;
@@ -63,7 +61,7 @@ public class TextCleaner
 
     private String removeUrl(String commentstr)
     {
-        String urlPattern = "((https?|ftp|gopher|telnet|file|Unsure|http):((//)|(\\\\))+[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]*)";
+        /*String urlPattern = "((https?|ftp|gopher|telnet|file|Unsure|http):((//)|(\\\\))+[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]*)";
         Pattern p = Pattern.compile(urlPattern, Pattern.CASE_INSENSITIVE);
         Matcher m = p.matcher(commentstr);
         int i = 0;
@@ -71,25 +69,25 @@ public class TextCleaner
             commentstr = commentstr.replaceAll(m.group(i),"").trim();
             i++;
         }
-        return commentstr;     
+        return commentstr;*/
+    	return commentstr.replaceAll("(https?|ftp|gopher|telnet|file|Unsure|http)://\\S+\\s?", "");
     }
 
-    private String removeStopWords(String str) throws IOException 
+    private String removeStopWords(String str)
     {    
     	String text="";
         
         StringTokenizer st = new StringTokenizer(str);
         int count = st.countTokens();
         
-        for(int i=1;i<count;i++)
+        for(int i=0;i<count;i++)
         {
             String word = st.nextToken();
             if(!swlist.contains(word.toLowerCase()))
             {
-                text += word + " ";
+                text += word.toLowerCase() + " ";
             }
         }
         return text;
     }
-
 }

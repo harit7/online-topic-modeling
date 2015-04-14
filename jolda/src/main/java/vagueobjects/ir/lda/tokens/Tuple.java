@@ -46,4 +46,14 @@ public class Tuple implements Comparable<Tuple> {
         stringBuilder.append("[").append(documents.getToken(position))
                 .append("->").append(NF.format(value)).append("] ");
     }
+
+	public int getPosition() {
+		return position;
+	}
+
+	public double getValue() {
+		return value;
+	}
+    
+    
 }

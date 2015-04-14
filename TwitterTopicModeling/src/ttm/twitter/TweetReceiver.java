@@ -56,8 +56,8 @@ public class TweetReceiver
 	
 	    FilterQuery filter = new FilterQuery();
 	    filter.language(new String[]{"en"});
-	    filter.locations(new double[][] { {57,5 },{ 101,39 }  }); //for indian subcontinent
-	   // filter.locations(new double[][] { {-180,-90 },{ 180,90 }  }); // for the whole world
+	   // filter.locations(new double[][] { {57,5 },{ 101,39 }  }); //for indian subcontinent
+	    filter.locations(new double[][] { {-180,-90 },{ 180,90 }  }); // for the whole world
 	    twitterStream.filter(filter);
 	   // sample() method internally creates a thread which manipulates TwitterStream and calls these adequate listener methods continuously.
 	    //twitterStream.sample();
@@ -150,7 +150,8 @@ public class TweetReceiver
             } 
             catch (Exception e) 
             {
-                e.printStackTrace();
+            	
+                //e.printStackTrace();
             }
         }
         public void onDeletionNotice(StatusDeletionNotice statusDeletionNotice) {}

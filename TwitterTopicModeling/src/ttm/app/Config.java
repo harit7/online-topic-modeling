@@ -4,8 +4,8 @@ import java.io.File;
 
 public class Config 
 {
-	public static final int MAX_TWEETS_PER_DOC = 4096 ;
-    public static final int BATCH_SIZE  =  4;
+	public static final int MAX_TWEETS_PER_DOC = 2048 ;
+    public static final int BATCH_SIZE  =  2;
     
     public static final int K 			= 5;
     

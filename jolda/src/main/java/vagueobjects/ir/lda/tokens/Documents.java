@@ -22,6 +22,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+import java.io.Serializable;
 import java.text.BreakIterator;
 import java.util.*;
 
@@ -29,8 +30,12 @@ import java.util.*;
  * Parses a document into a list of token ids and a list of counts,
  * and builds  document representation as  2D arrays of token ids and counts.
  */
-public class Documents {
-    private final Vocabulary vocabulary;
+public class Documents implements Serializable{
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 249039485365641407L;
+	private final Vocabulary vocabulary;
     /**
      * wordIds[i][j] gives the jth unique token present in document i
      */
