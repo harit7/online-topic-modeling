@@ -1,5 +1,7 @@
 package ttm.utils;
 
+
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -52,8 +54,8 @@ public class TextCleaner
     }
     public String clean(String text) throws IOException 
     {
-		String cleantext = text.replaceAll("[^\\w\\s\\-_]", " ").replaceAll(" +", " ");
-		cleantext  = removeUrl(cleantext);
+		String cleantext = removeUrl(text);
+		cleantext = cleantext.replaceAll("[^\\w\\s\\-_]", " ").replaceAll(" +", " ");		
 		cleantext  = removeStopWords( cleantext + "\n");
 		
 		return cleantext;
@@ -61,7 +63,7 @@ public class TextCleaner
 
     private String removeUrl(String commentstr)
     {
-        String urlPattern = "((https?|ftp|gopher|telnet|file|Unsure|http):((//)|(\\\\))|(\\/\\/)+[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]*)";
+        String urlPattern = "((https?|ftp|gopher|telnet|file|Unsure|http):((//)|(\\\\))+[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]*)";
         Pattern p = Pattern.compile(urlPattern, Pattern.CASE_INSENSITIVE);
         Matcher m = p.matcher(commentstr);
         int i = 0;
@@ -69,7 +71,7 @@ public class TextCleaner
             commentstr = commentstr.replaceAll(m.group(i),"").trim();
             i++;
         }
-        return commentstr;
+        return commentstr;     
     }
 
     private String removeStopWords(String str) throws IOException 
@@ -89,6 +91,5 @@ public class TextCleaner
         }
         return text;
     }
-
 
 }

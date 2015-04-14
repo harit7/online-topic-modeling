@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.Vector;
+
 import viet.text.parsing.filter.AndFilter;
 import viet.text.parsing.filter.MarkFilter;
 import viet.text.parsing.filter.NumberFilter;
@@ -75,11 +76,19 @@ public class Counter {
 	public Counter(NSPOption option){
 		
 		this.option = option;
-		System.out.println("###############window:" + option.window);
+		//System.out.println("###############window:" + option.window);
 		dict = new Dictionary();
 		
 		window = option.window;		
 		ngramSet = new NGramSet(option,dict);
+		
+		TokenFilter [] filterArray = {new StopWordFilter(option.stopFile),
+	  			  new MarkFilter(),
+	  			  new NumberFilter(),
+	  			  new RegexFilter(".*[0-9,\\.;:?/\\\\%$@!\\[\\]]+.*"),
+	  			  new TokenLengthFilter(2)};
+	  			
+	  	this.setTokenFilter(new AndFilter(filterArray));
 		
 //		TokenFilter [] filterArray = {new StopWordFilter(),
 //				  new MarkFilter(),
@@ -89,6 +98,38 @@ public class Counter {
 //		this.setTokenFilter(new AndFilter(filterArray));
 	}	
 	
+	public NGramSet getNgramSet() {
+		return ngramSet;
+	}
+
+	public void setNgramSet(NGramSet ngramSet) {
+		this.ngramSet = ngramSet;
+	}
+
+	public Dictionary getDict() {
+		return dict;
+	}
+
+	public void setDict(Dictionary dict) {
+		this.dict = dict;
+	}
+
+	public NSPOption getOption() {
+		return option;
+	}
+
+	public void setOption(NSPOption option) {
+		this.option = option;
+	}
+
+	public int getWindow() {
+		return window;
+	}
+
+	public void setWindow(int window) {
+		this.window = window;
+	}
+
 	public Counter(NSPOption option, Dictionary dict){
 		
 		this.option = option;
@@ -102,8 +143,8 @@ public class Counter {
 	//---------------------------------------------------
 	// Get and Set Methods
 	//---------------------------------------------------
-	public static void setTokenFilter(TokenFilter tokenFilter){
-		Counter.tokenFilter = tokenFilter;
+	public  void setTokenFilter(TokenFilter tokenFilter){
+		this.tokenFilter = tokenFilter;
 	}
 
 	public static TokenFilter getTokenFilter(){
@@ -210,6 +251,51 @@ public class Counter {
 		Document document = new Document(doc);
 		return genNGram(document, ngram);		
 	}
+	private void processDocs(List<String> listDocs) throws Exception{
+		try {
+			//List<File> files = Util.getFileListing(dataDir);
+			
+			for (int i = 0; i < listDocs.size(); ++i){
+				
+				
+				String content = listDocs.get(i) ;
+//				String line = ""; int count = 0;
+//				while((line = reader.readLine()) != null){
+//					count++;
+//					if (count <= 4) continue;
+//					
+//					content += line + "\n";
+//				}
+				
+				content = content.trim();
+				Document doc = new Document(content);
+				
+				if (option.agressiveCount){
+					//System.out.println("aggressive");
+					genMultiGram(doc, window);
+				}
+				else
+					genNGram(doc, window);
+				if (i%100 == 0) {
+					if (i%5000==0 && i > 0){
+						freqCutOff();
+						rareCutOff();
+						//System.out.println("------------------------------");
+					}
+					
+					System.gc();
+					//System.out.println(i + " doc completed ...........");
+					//System.out.println("NGramSet size:" + ngramSet.size());
+					//System.out.println("Token dict size:" + ngramSet.dict.word2id.size());					
+					
+				}				
+
+			}			
+		}
+		catch (Exception e){
+			throw e;
+		}		
+	}
 
 	
 	//---------------------------------------------------
@@ -237,7 +323,7 @@ public class Counter {
 				Document doc = new Document(content);
 				
 				if (option.agressiveCount){
-					System.out.println("aggressive");
+					//System.out.println("aggressive");
 					genMultiGram(doc, window);
 				}
 				else
@@ -246,13 +332,13 @@ public class Counter {
 					if (i%5000==0 && i > 0){
 						freqCutOff();
 						rareCutOff();
-						System.out.println("------------------------------");
+						//System.out.println("------------------------------");
 					}
 					
 					System.gc();
-					System.out.println(i + " doc completed ...........");
-					System.out.println("NGramSet size:" + ngramSet.size());
-					System.out.println("Token dict size:" + ngramSet.dict.word2id.size());					
+					//System.out.println(i + " doc completed ...........");
+					//System.out.println("NGramSet size:" + ngramSet.size());
+					//System.out.println("Token dict size:" + ngramSet.dict.word2id.size());					
 					
 				}				
 								
@@ -263,17 +349,43 @@ public class Counter {
 			throw e;
 		}		
 	}
+	public void count1(List<String> listDocs){		
+		try{		
+			//readDocs(option.dataDir);
+			processDocs(listDocs);
+			
+			ngramSet.nTotalActiveGram = ngramSet.size();
+
+			//System.out.println("Ngram size before cutting off:" + ngramSet.size());
+			freqCutOff();			
+			rareCutOff();
+			
+			//System.out.println("Ngram size after cutting off:" + ngramSet.nTotalActiveGram);
+			
+			genNGramFreq();	
+			if (option.agressiveCount){
+				for (int i = 1; i <= window; ++i)
+					writeCnt(option.cntFile, i);
+			}
+			else writeCnt(option.cntFile, window);
+		}
+		catch (Exception e){
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
+	}
 	
 	public void count(){		
 		try{		
 			readDocs(option.dataDir);			
 			ngramSet.nTotalActiveGram = ngramSet.size();
 			
-			System.out.println("Ngram size before cutting off:" + ngramSet.size());
+			
+			//System.out.println("Ngram size before cutting off:" + ngramSet.size());
 			freqCutOff();			
 			rareCutOff();
 			
-			System.out.println("Ngram size after cutting off:" + ngramSet.nTotalActiveGram);
+			//System.out.println("Ngram size after cutting off:" + ngramSet.nTotalActiveGram);
 			
 			genNGramFreq();	
 			if (option.agressiveCount){
@@ -295,7 +407,7 @@ public class Counter {
 	private void writeCnt(String cntFilename, int w){		
 			try {			
 				BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(
-						new FileOutputStream(cntFilename+w+".cnt"), "UTF-8"));
+						new FileOutputStream(cntFilename), "UTF-8"));
 				writer.write(ngramSet.window2nActiveGram.get(w) + "\n");
 				
 				//System.out.println("window: " + w);
@@ -419,8 +531,8 @@ public class Counter {
 			}
 			
 			nGenedNgram++;
-			if (nGenedNgram % 1000 == 0)
-				System.out.println(nGenedNgram + " " + w + "grams completed");
+			//if (nGenedNgram % 1000 == 0)
+			//	System.out.println(nGenedNgram + " " + w + "grams completed");
 		}	
 	}
 	
@@ -429,7 +541,7 @@ public class Counter {
 	//-------------------------------------------
 	public void freqCutOff(){
 		if (option.freqCutOff > 0){
-			System.out.println("before freq cutoff:" + ngramSet.nTotalActiveGram);
+			//System.out.println("before freq cutoff:" + ngramSet.nTotalActiveGram);
 			
 			int nCuttOff = 0;
 			Vector<Long> grams = ngramSet.getNGramIDs();			
@@ -443,8 +555,8 @@ public class Counter {
 				}
 			}
 			
-			System.out.println("Number of freqcutoff:" + nCuttOff);
-			System.out.println("After cutoff:" + ngramSet.nTotalActiveGram);
+			//System.out.println("Number of freqcutoff:" + nCuttOff);
+			//System.out.println("After cutoff:" + ngramSet.nTotalActiveGram);
 		}
 	}
 	
@@ -465,8 +577,8 @@ public class Counter {
 				}
 			}
 			
-			System.out.println("Number of RareCutoff:" + nCutOff);
-			System.out.println("after rare cutoff:" + ngramSet.nTotalActiveGram);
+			//System.out.println("Number of RareCutoff:" + nCutOff);
+			//System.out.println("after rare cutoff:" + ngramSet.nTotalActiveGram);
 		}
 	}
 	
@@ -479,12 +591,12 @@ public class Counter {
 		option = NSPOption.readOption(args[0]);
 		try {
 			
-			TokenFilter [] filterArray = {new StopWordFilter(option.stopFile),
-			  new MarkFilter(),
-			  new NumberFilter(),
-			  new RegexFilter(".*[0-9,\\.;:?/\\\\%$@!\\[\\]]+.*"),
-			  new TokenLengthFilter(2)};
-			Counter.setTokenFilter(new AndFilter(filterArray));
+//			TokenFilter [] filterArray = {new StopWordFilter(option.stopFile),
+//			  new MarkFilter(),
+//			  new NumberFilter(),
+//			  new RegexFilter(".*[0-9,\\.;:?/\\\\%$@!\\[\\]]+.*"),
+//			  new TokenLengthFilter(2)};
+			//Counter.setTokenFilter(new AndFilter(filterArray));
 			
 			long startTime = (new Date()).getTime();
 			
@@ -492,7 +604,7 @@ public class Counter {
 			c.count();
 			
 			long endTime = (new Date()).getTime();
-			System.out.println("counting in " + (endTime - startTime) + "miliseconds");
+			//System.out.println("counting in " + (endTime - startTime) + "miliseconds");
 		}
 		catch (Exception e){
 			System.out.println(e.getMessage());		

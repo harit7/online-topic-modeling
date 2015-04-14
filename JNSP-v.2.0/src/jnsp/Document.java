@@ -131,8 +131,8 @@ public class Document {
 	protected void setWindow(int w){
 		N = w;
 	}
-	
 	public void resetPostion(){
+		
 		this.chunkIndex = 0;
 		this.chunkOffset = 0;
 	}

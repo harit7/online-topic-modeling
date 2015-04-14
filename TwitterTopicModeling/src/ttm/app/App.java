@@ -2,34 +2,29 @@ package ttm.app;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+import jnsp.Counter;
+import ttm.topiclabel.TopicLabel;
+import ttm.topiclabel.TopicLabeler;
 import ttm.twitter.TweetReceiver;
 import ttm.utils.TextCleaner;
 import vagueobjects.ir.lda.online.OnlineLDA;
 import vagueobjects.ir.lda.online.Result;
 import vagueobjects.ir.lda.tokens.Documents;
 import vagueobjects.ir.lda.tokens.PlainVocabulary;
-import vagueobjects.ir.lda.tokens.Vocabulary;
 
-public class App {
- 
-	public static final int MAX_TWEETS_PER_DOC = 32;
-    public static final int BATCH_SIZE  =  4;
-
+public class App 
+{
+	
+	
     public static void main(String[] args) throws Exception
     { 
-        int D=  10800;
-        int K = 5;
-        
+        int D  =  Config.BATCH_SIZE;
+        int K  =  Config.K;
 
         double tau =  1d;
         double kappa =  0.8d;
@@ -37,217 +32,203 @@ public class App {
         double alpha = 1.d/K;
         double eta = 1.d/K;
         
-        String vocabFilePath     = "data/vocab.txt";
-        String stopWordsFilePath = "data/stopwords.txt";
-        String docsDir           = "data/docs/";
+        final char slash = Config.slash;
+        boolean startAfresh = true;
         
-        String stateFile 	     = "data/olda_state.bin" ;
+        boolean live = false; // if true it will fetch live tweets and work on them.
+         
+        File dir 				 = new File(Config.ROOT_DATA_DIR);
+    	String absDataDir        = dir.getAbsolutePath();
+    	String absDocsDir 		 = absDataDir + slash + "docs";
+    	String stopWordsFilePath = absDataDir + slash + Config.STOP_WORDS_FILE;
+    	
+        PlainVocabulary vocab    = null;
         
-        Vocabulary vocabulary    = new PlainVocabulary( vocabFilePath);
-        OnlineLDA lda		     = null;
+        String stateFilesDir     = absDataDir    + slash + "state";
+        String appStateFilePath  = stateFilesDir + slash + "app_state.bin";
+      
         
-        try
-        {
-        	lda = readOLDAObject(stateFile);
-        	
-        }
-        catch(Exception e)
-        {
-        	//e.printStackTrace();
-        }
-        if(lda == null)
-        {	
-        	System.out.println("starting afresh"); 
-        	lda = new OnlineLDA(vocabulary.size(),K, D, alpha, eta, tau, kappa);
-        }
-        else
-        {
-        	System.out.println("loaded previous state.." ); 
-        }
+        OnlineLDA prevLda	= null;
+        Result prevResult	= null;
+        OnlineLDA curLda	= null;
+        Result curResult	= null;
+        AppState appState 	= new AppState(0,0); 
+        //PlainVocabulary vocab	=	null;		
         
+        Counter ngramCounter  = new Counter(AppUtils.getNSPOption());
+        TopicLabeler labeler  = new TopicLabeler(ngramCounter);
         List<String> documents = new ArrayList<String>(); 
         
-        File dir = new File(docsDir);
-    	String absDocsDir = dir.getAbsolutePath();
+        long lastDocId    = 0;
+        long batchId      = 0;
+       
+        try{
+        	
+        	appState      = AppUtils.readAppState(appStateFilePath);
+        	prevLda	      = appState.getPrevOlda();
+        	prevResult	  = appState.getPrevResult();
+        	vocab 		  = appState.getVocab();
+        	if(prevResult == null) 
+        	{
+        		prevResult = appState.getCurResult();
+        	}
+        	lastDocId = appState.getLastDocId();
+        	batchId   = appState.getLastBatchId();
+        	String lastBatchDoc = absDocsDir + slash + 
+        						   AppUtils.getBatchFileName(appState.lastDocId, appState.lastBatchId);
+        	
+        	System.out.println("reading from : "+ lastBatchDoc); 
+			documents   = AppUtils.readPrevBatchDocs(lastBatchDoc);
+	
+			System.out.println("loaded previous state.." );
+			
+			List<TopicLabel> listLabels = labeler.getTopicLabels(prevResult, documents, vocab);
+			for(TopicLabel label: listLabels){
+				System.out.println(label); 
+			}
+			
+			curLda = appState.getCurOlda();
+  
+        }
+        catch(Exception e){
+        	e.printStackTrace();
+        }
+        if(vocab == null)
+        {
+        	vocab = new PlainVocabulary( Config.vocabFilePath);
+        }
+        if(curLda == null || appState == null || startAfresh )
+        {	
+        	System.out.println("starting afresh"); 
+        	
+        	curLda   = new OnlineLDA(vocab.size(),K, D, alpha, eta, tau, kappa);
+        	appState = new AppState(0, 0);
+      
+        	
+        }
+        if(documents == null || documents.size() < Config.BATCH_SIZE)
+        {	
+        	documents  = new ArrayList<String>();
+        	for(int i = 0; i< Config.BATCH_SIZE ;i++){
+        		documents.add(null);
+        	}
+        }
         
-        long lastDocId          = getLastDocId(docsDir); 
-        String tweetsFilePath   = absDocsDir+ File.separatorChar + "tweets_"+lastDocId+".txt";
-
     	Scanner sc = new Scanner(System.in);
         System.out.println("Continue for Live Tweets?");
         sc.next();
+      
+        // data/docs/tweets_0.txt
+        
         lastDocId++;
-
-        TweetReceiver tweetReceiver = new TweetReceiver(tweetsFilePath);
+        batchId = 0;
        
+       
+        String tweetsFilePath  =   absDocsDir+ slash + "clubbeddata.txt";
+        
         TextCleaner cleaner = new TextCleaner(stopWordsFilePath);
-    	tweetReceiver.setCleaner(cleaner); 
-    	
-    	tweetReceiver.getTweets();
-    	BufferedReader tweetReader = new BufferedReader(new FileReader(tweetsFilePath));
-    	
-    	/// init reading buffer
-    	for(int i = 0; i< BATCH_SIZE ;i++)
-    	{
-    		documents.add(null);
-    	}
-    	
-        while(true)
+        
+        if(live)
         {
+        	tweetsFilePath   = absDocsDir + slash + "tweets_"+(lastDocId)+".txt";
+	        String batchFileName    = AppUtils.getBatchFileName(lastDocId, batchId);
+	        			
+	        String batchFilePath    = absDocsDir + slash + batchFileName;
+	        
+	        TweetReceiver tweetReceiver = new TweetReceiver(tweetsFilePath);
+	       
+	        
+	    	tweetReceiver.setCleaner(cleaner);    
+	        
+	    	tweetReceiver.getTweets();
+        }
+    	
+         
+    	
+    	BufferedReader tweetReader = new BufferedReader(new FileReader(tweetsFilePath));
+
+        while(true){ 
         	
+        	prevLda  = curLda;
+        	prevResult = curResult;
         	
-        	for( int i = 0; i< BATCH_SIZE;i++)
-        	{
+        	for( int i = 0; i< Config.BATCH_SIZE;i++){
         		
-        		documents.set(i,readTweets(tweetReader)); 
+        		documents.set(i,AppUtils.readTweets(tweetReader,cleaner)); 
         		System.out.println("read doc #"+(i+1)); 
         		  
         	}
-        	System.out.println("Done Reading.."); 
-            Documents docs = new Documents(documents, vocabulary);
-        	Result result = lda.workOn(docs);
-        	System.out.println(result); 
+        	System.out.println("Done Reading..");
         	
-        	// update vocab..
+            updateVocab(documents, vocab);
+            
+            Documents docs = new Documents(documents, vocab);
+            
+          
+            // create lda instance
+        	curLda   = new OnlineLDA(vocab.size(),K, D, alpha, eta, tau, kappa);
+        	
+        	curResult = curLda.workOn(docs);
+        	System.out.println(curResult); 
+        	
+       
+        	
         	// detect emerging topics
         	// label the topics
         	
-        	System.out.println("press  key to continue"); 
-        	sc.next();
+        	List<TopicLabel> listLabels = labeler.getTopicLabels(curResult, documents, vocab);
+        	for(TopicLabel label: listLabels)
+        	{
+        		System.out.println(label); 
+        	}
+        	
+        	listLabels = labeler.getTopicLabelsZeroOrder(curResult, documents, vocab);
+        	for(TopicLabel label: listLabels)
+        	{
+        		System.out.println(label); 
+        	}
+        	
+        	listLabels = labeler.getTopicLabelsBaseline(curResult, documents, vocab);
+        	for(TopicLabel label: listLabels){
+        		System.out.println(label); 
+        	}
+        	
+        	
         	try {
+				appState.setCurOlda(curLda);
+				appState.setCurResult(curResult);
+				appState.setPrevOlda(prevLda);
+				appState.setPrevResult(prevResult);
+				appState.setVocab(vocab);
+				//appState.setDocuments(documents); 
+				appState.setLastBatchId(batchId); 
+				appState.setLastDocId(lastDocId); 
 				
-        		writeOLDAObject(lda, stateFile);
+        		AppUtils.writeAppState(appState, appStateFilePath);
+        		String batchFilePath = absDocsDir + slash + AppUtils.getBatchFileName(lastDocId, batchId);
+        	
+        		AppUtils.writeCurBatchDocs(documents, batchFilePath); 
+        		
+        		System.out.println("saved current state..");
+        		batchId++;
 				
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
         	
+        	System.out.println("press  key to continue"); 
+        	//sc.next();
+        	//System.exit(0);
+        	//break;
+        	
         }
-        
-   
     }
-    
-    static String readDoc(File doc) throws IOException
+    private static void updateVocab(List<String> docs, PlainVocabulary vocab )
     {
-    	String content = "";
-        FileReader fr = new FileReader(doc);
-        BufferedReader br = new BufferedReader(fr);
-        String s = "";
-        
-        while((s= br.readLine())!= null)
-        {
-        	content += s+"\n";
-        }
-        
-        br.close();
-        return content;
-
-    }
-    static List<String> readDocs(String path) throws IOException
-    {
-
-        List<String> strings = new ArrayList<String>();
-        File dir = new File(path);
-        for(File f :  dir.listFiles())
-        {
-            
-        	if(f.isDirectory()) continue;
-            
-            strings.add(readDoc(f)); 
-        
-
-        }
-        return strings;
-    }
-    
-    static long getLastDocId(String docsDir) 
-    {
-    	long max = -1;
-    	try
-        {
-	        File dir = new File(docsDir);
-	        
-	        for(File f :  dir.listFiles()){
-	        	if(f.isDirectory()) continue;
-	        	
-	        	String fname = f.getName();
-	        	int st = fname.indexOf("_");
-	        	String n = fname.substring(st+1,fname.length()-4) ; // -4 for .txt e.g. tweets_1001.txt 
-	        	Long num =  Long.parseLong(n);
-	        	if(num > max) max = num;
-	        }
-        }
-    	catch(Exception e)
+    	for(String doc: docs)
     	{
-    		e.printStackTrace();
+    		
+    		vocab.addWords(doc.split(" "));   
     	}
-        return max;
-            	
     }
-    
-    public static String readTweets( BufferedReader reader) throws IOException
-    {
-    	// MAX_TWEETS_PER_DOC tweets separated by \n .. serves as a document
-    	String doc = "";
-    	int lr     = 0;
-    	String tmp = "";
-    	while( lr < MAX_TWEETS_PER_DOC)
-    	{
-    		tmp = reader.readLine();
-    		 
-    		if(tmp == null ) {
-    			try{
-    				Thread.sleep(500);
-    			}
-    			catch(InterruptedException e)
-    			{
-    				e.printStackTrace();
-    			}
-    			continue; 
-    		}
-    		else
-    		{
-    			doc    = doc + tmp + "\n";
-    			lr++;
-    			System.out.print(lr+" ");
-    			if(lr%20 == 0) System.out.println();
-    			//System.out.print(lr*100/MAX_TWEETS_PER_DOC +"% \r");
-    			 
-    			
-    		}
-    	}
-    	System.out.println();
-    	return doc;
-    }
-    
-    public static OnlineLDA readOLDAObject(String filePath) throws IOException, ClassNotFoundException
-    {
-    	FileInputStream fis   = new FileInputStream(filePath);
-    	ObjectInputStream ois = new ObjectInputStream(fis);
-    	Object obj     = ois.readObject();
-    	OnlineLDA olda = null;
-    	if(obj != null)
-    	{
-    		 olda = (OnlineLDA)ois.readObject();
-    	}
-    	ois.close();
-    	
-    	return olda;
-    	
-    	
-    }
-    public static void writeOLDAObject(OnlineLDA obj, String filePath) throws IOException
-    {
-    	FileOutputStream fos   = new FileOutputStream(filePath);
-    	ObjectOutputStream oos = new ObjectOutputStream(fos);
-    	
-    	oos.writeObject(obj);
-    	//fos.flush();
-    	//fos.close();
-    	oos.flush();
-    	oos.close();
-    	
-    	
-    }
-
 }
